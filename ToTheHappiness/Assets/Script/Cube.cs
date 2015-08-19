@@ -3,56 +3,97 @@ using System.Collections;
 
 public class Cube : MonoBehaviour {
 
+    public int moveSpeed;
+
     Vector3 startPoint;
     Vector3 endPoint;
-    public float duration = 100.0f;
     float zAxis;
-    bool keepMoving = true;
-    bool collisionWithBlcok = false;
     Ray ray;
     RaycastHit hit;
+    Vector3 moveDir;
+    Rigidbody rb;
+    bool isFirstCollisionToBottom = true;
+    bool isFirstCollisionToCube = true;
+
 
     void Start () {
-        startPoint = transform.position;
-        zAxis = transform.position.z;
-        GetEndPoint();
+        rb = GetComponent<Rigidbody>();
+        InitVelocity();
 	}
 
     void Update()
     {
+      
 
-        if(collisionWithBlcok)
-        {
-            Vector3 moveVector = endPoint - startPoint;
-            moveVector.x = -moveVector.x;
-            startPoint = transform.position;
-            endPoint = startPoint + moveVector;
-
-            collisionWithBlcok = false;
-        }
-
-        if (keepMoving)
-        {
-            transform.position = Vector3.Lerp(transform.position,
-                                              endPoint,
-                                              1 / (duration * (Vector3.Distance(transform.position, endPoint))));
-        }
 	}
 
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.layer == LayerMask.NameToLayer("Cube"))
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Block"))
         {
-             keepMoving = false;
+            if (collision.gameObject.tag == "BottomBlock")
+            {
+                if(isFirstCollisionToBottom)
+                {
+                    isFirstCollisionToBottom = false;
+                    
+                    Debug.Log("Collision to bottom");
+                    rb.velocity = Vector3.zero;
+                    rb.rotation = Quaternion.identity;
+                }
+
+            }
+            else
+            {
+                Debug.Log("Collision to side");
+
+                ChangeMoveDir();
+            }
         }
-        else if(collision.gameObject.layer == LayerMask.NameToLayer("Block"))
+        else if (collision.gameObject.layer == LayerMask.NameToLayer("Cube"))
         {
-            collisionWithBlcok = true;
+            if (isFirstCollisionToCube)
+            {
+                isFirstCollisionToCube = false;
+
+                Debug.Log("Collision to Cube");
+                rb.velocity = Vector3.zero;
+                rb.rotation = Quaternion.identity;
+            }
+
         }
     }
 
+    //void OnTriggerEnter(Collider other)
+    //{
+    //    if (other.gameObject.layer == LayerMask.NameToLayer("Block"))
+    //    {
+    //        if (other.gameObject.tag == "BottomBlock")
+    //        {
+    //            rb.velocity = Vector3.zero;
+    //            rb.rotation = Quaternion.identity;
+    //            Debug.Log("Collision to bottom");
 
-    void GetEndPoint()
+    //        }
+    //        else
+    //        {
+    //            Debug.Log("Collision to side");
+
+    //            ChangeMoveDir();
+    //        }
+
+    //    }
+    //    else if (other.gameObject.layer == LayerMask.NameToLayer("Cube"))
+    //    {
+    //        Debug.Log("Collision to Cube");
+
+    //        rb.velocity = Vector3.zero;
+    //        //rb.rotation = Quaternion.identity;
+
+    //    }
+    //}
+
+    void GetEndPointFromMousePos()
     {
         ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
@@ -63,5 +104,32 @@ public class Cube : MonoBehaviour {
         }
     }
 
-   
+    void InitVelocity()
+    {
+        startPoint = transform.position;
+        zAxis = transform.position.z;
+        GetEndPointFromMousePos();
+        moveDir = endPoint - startPoint;
+        rb.velocity = moveDir.normalized * moveSpeed;
+    }
+
+    void ChangeMoveDir()
+    {
+        moveDir = endPoint - startPoint;
+        moveDir.x = -moveDir.x;
+        startPoint = transform.position;
+        endPoint = startPoint + moveDir;
+
+        rb.velocity = moveDir.normalized * moveSpeed;
+    }
+
+    //public float duration = 100.0f;
+
+    // object move to Mouse pos
+    //void KeepMovingToEndPoint()
+    //{
+    //    transform.position = Vector3.Lerp(transform.position,
+    //                                          endPoint,
+    //                                          1 / (duration * (Vector3.Distance(transform.position, endPoint))));
+    //}
 }
